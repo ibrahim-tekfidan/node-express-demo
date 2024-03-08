@@ -1,9 +1,32 @@
+const debug = require('debug')('app:startup');
+const config = require('config');
+const helmet = require('helmet'); // In this list there is a helmet middle functions. It helps you to secure your apps by setting various HTTP headers
+const morgan = require('morgan'); // Another useful third-party middleware is morgen. We use Morgan to log HTTP request.
 const Joi = require('joi');
 const express = require('express'); // This returns a function
+const logger = require('./logger');
 const app = express(); // This returns object of type Express
 
+app.set('view engine', 'pug');
+app.set('views', './views'); // default
+
+app.use(logger);
 // When we call express.json() method this method return a piece of middleware and then we call app.use() to use that middleware in the request processing pipeline.
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.use(helmet());
+
+if (app.get('env') === 'development') {
+  // process.env.NODE_ENV === app.get('env') unlike  app.get('env') default process.env.NODE_ENV is undefined. app.get('env') default is development
+  app.use(morgan('tiny'));
+  debug('Morgan is enabled...'); // console.log()
+}
+
+// Configuration
+console.log(`Application name: ${config.get('name')}`);
+console.log(`Mail server name: ${config.get('mail.host')}`);
+console.log(`Mail server password: ${config.get('mail.password')}`);
 
 // For demo we are using array of objects instead of using database.
 const courses = [
@@ -19,7 +42,7 @@ const courses = [
 // req object has a bunch of useful properties that gives us information about the incoming request. If you wanna learn these properties, it's best the look at the express documentation
 
 app.get('/', (req, res) => {
-  res.send('Hello world!');
+  res.render('index', { title: 'My Express App', message: 'Hello' });
 });
 
 app.get('/api/courses', (req, res) => {
